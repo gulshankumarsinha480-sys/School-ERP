@@ -25,11 +25,49 @@ import { LibraryDashboard } from "./pages/library/LibraryDashboard";
 import { LibraryBooks } from "./pages/library/LibraryBooks";
 import { LibraryIssueReturn } from "./pages/library/LibraryIssueReturn";
 import { RoleSelector } from "./pages/RoleSelector";
+import { Login } from "./pages/login/login";
+import { PrincipalLayout } from "./components/principalLayout";
+import { PrincipalDashboard } from "./pages/principal/principalDashboard";
+import { PrincipalReports } from "./pages/principal/PrincipalReports";
+import { PrincipalStudents } from "./pages/principal/PrincipalStudents";
+import { PrincipalTeachers } from "./pages/principal/PrincipalTeachers";
+import { PrincipalAttendance } from "./pages/principal/PrincipalAttendance";
+import { PrincipalMarks } from "./pages/principal/PrincipalMarks";
+import { PrincipalAssignments } from "./pages/principal/PrincipalAssignments";
+import { PrincipalTimetable } from "./pages/principal/PrincipalTimetable";
+import { PrincipalFinance } from "./pages/principal/PrincipalFinance";
+import { PrincipalInventory } from "./pages/principal/PrincipalInventory";
+import { PrincipalLibrary } from "./pages/principal/PrincipalLibrary";
+import { PrincipalCommunication } from "./pages/principal/PrincipalCommunication";
 
 export const router = createBrowserRouter([
   {
     path: "/",
+    Component: Login,
+  },
+  {
+    path: "/role-select",
     Component: RoleSelector,
+  },
+  {
+    path: "/principal",
+    Component: PrincipalLayout,
+    children: [
+      { index: true, Component: PrincipalDashboard },
+      { path: "reports", Component: PrincipalReports },
+      { path: "students", Component: PrincipalStudents },
+      { path: "teachers", Component: PrincipalTeachers },
+      { path: "attendance", Component: PrincipalAttendance },
+      { path: "marks", Component: PrincipalMarks },
+      { path: "assignments", Component: PrincipalAssignments },
+      { path: "timetable", Component: PrincipalTimetable },
+      { path: "notes", Component: PrincipalAssignments },
+
+      { path: "finance", Component: PrincipalFinance },
+      { path: "inventory", Component: PrincipalInventory },
+      { path: "library", Component: PrincipalLibrary },
+      { path: "communication", Component: PrincipalCommunication },
+    ],
   },
   {
     path: "/teacher",
@@ -77,3 +115,4 @@ export const router = createBrowserRouter([
     ],
   },
 ]);
+
