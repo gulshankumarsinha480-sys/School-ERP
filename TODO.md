@@ -1,16 +1,8 @@
-# TODO - Make UI Responsive
+# TODO
 
-- [ ] Inspect global styles (src/styles/theme.css) and Tailwind setup (if needed).
-- [x] Update all main app layout components to ensure top bar and content never overflow on small screens.
-  - [x] src/app/components/Layout.tsx
-  - [x] src/app/components/StudentLayout.tsx
-  - [x] src/app/components/InventoryLayout.tsx
-  - [x] src/app/components/LibrarianLayout.tsx
-
-- [x] Add responsive wrapping/spacing fixes for common flex rows:
-  - [x] Top bar right-side controls (ThemeSwitcher + year/labels)
-  - [ ] Any dropdown trigger/menus that might clip
-- [ ] Audit pages/components for any hard desktop-only spacing and replace with responsive equivalents.
-- [ ] Run build/lint (npm/pnpm) and fix any TypeScript/formatting errors.
-- [ ] Quick manual check instructions (mobile/tablet widths).
+- [ ] Inspect existing Principal attendance page and related attendance pages (teacher/student) for UI patterns.
+- [ ] Design and implement `src/app/pages/principal/PrincipalAttendance.tsx` as a full principal attendance dashboard (overview + history + export).
+- [ ] Reuse existing shadcn/ui components and styling conventions.
+- [ ] Ensure imports compile and page renders under `/principal/attendance` route.
+- [ ] Run a build to verify TypeScript compilation.
 
