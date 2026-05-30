@@ -42,6 +42,7 @@ import { PrincipalInventory } from "./pages/principal/PrincipalInventory";
 import { PrincipalLibrary } from "./pages/principal/PrincipalLibrary";
 import { PrincipalCommunication } from "./pages/principal/PrincipalCommunication";
 import { PrincipalStudentSetup } from "./pages/principal/PrincipalStudentSetup";
+import { PrincipalAcademicYear } from "./pages/principal/PrincipalAcademicYear";
 
 export const router = createBrowserRouter([
   {
@@ -60,6 +61,7 @@ export const router = createBrowserRouter([
       { path: "reports", Component: PrincipalReports },
       { path: "students", Component: PrincipalStudents },
       { path: "marks",  Component: PrincipalMarks},
+      { path: "setup/AcademicYear", Component:  PrincipalAcademicYear},
       { path: "setup/students", Component: PrincipalStudentSetup },
       { path: "setup/classSetup", Component: PrincipalClassSetup },
       { path: "setup/sectionSetup", Component: PrincipalSectionSetup},

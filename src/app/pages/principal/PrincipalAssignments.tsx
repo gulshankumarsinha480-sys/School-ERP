@@ -1,496 +1,717 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { useState, useMemo } from "react";
+import { Card, CardContent } from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
 import { Badge } from "../../components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../components/ui/dialog";
 import { Progress } from "../../components/ui/progress";
+import { format } from "date-fns";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../components/ui/select";
-import {
-  ClipboardCheck,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  TrendingUp,
-  Users,
-  BarChart2,
-  BookOpen,
+  BookOpen, Users, CheckCircle2, AlertTriangle,
+  TrendingUp, Eye, Search, ChevronDown, ChevronUp,
+  Award, Clock, XCircle, BarChart3, Filter
 } from "lucide-react";
 
-// ── Types ──────────────────────────────────────────────────────────────────────
+// ─── DATA ──────────────────────────────────────────────────────────────────
 
-interface ClassRecord {
-  grade: number;
-  name: string;
-  teacher: string;
-  students: number;
-  present: number;
-  absent: number;
-  leave: number;
-}
-
-interface LowAttendanceAlert {
-  name: string;
-  initials: string;
-  cls: string;
-  pct: number;
-}
-
-interface SubjectStat {
-  subject: string;
-  pct: number;
-}
-
-// ── Static data ────────────────────────────────────────────────────────────────
-
-const MONTHS = [
-  { value: "jan-2026", label: "January 2026" },
-  { value: "feb-2026", label: "February 2026" },
-  { value: "mar-2026", label: "March 2026" },
-  { value: "apr-2026", label: "April 2026" },
-  { value: "may-2026", label: "May 2026" },
-  { value: "jun-2026", label: "June 2026" },
+const teachers = [
+  { id: 1, name: "Mr. Arjun Sharma",   subjects: ["Mathematics"] },
+  { id: 2, name: "Ms. Priya Verma",    subjects: ["Physics"] },
+  { id: 3, name: "Dr. Rahul Mehta",    subjects: ["Chemistry"] },
+  { id: 4, name: "Mrs. Sunita Kapoor", subjects: ["English"] },
 ];
 
-const GRADES = [
-  { value: "all", label: "All Grades" },
-  { value: "9",   label: "Grade 9"  },
-  { value: "10",  label: "Grade 10" },
-  { value: "11",  label: "Grade 11" },
-  { value: "12",  label: "Grade 12" },
+const students = [
+  { id: 1,  name: "Aisha Khan",      class: "Class 10-A", rollNo: "10A-01" },
+  { id: 2,  name: "Rohan Gupta",     class: "Class 10-A", rollNo: "10A-02" },
+  { id: 3,  name: "Priya Singh",     class: "Class 10-A", rollNo: "10A-03" },
+  { id: 4,  name: "Rahul Das",       class: "Class 10-A", rollNo: "10A-04" },
+  { id: 5,  name: "Sneha Patel",     class: "Class 10-A", rollNo: "10A-05" },
+  { id: 6,  name: "Aryan Sharma",    class: "Class 10-B", rollNo: "10B-01" },
+  { id: 7,  name: "Kavya Nair",      class: "Class 10-B", rollNo: "10B-02" },
+  { id: 8,  name: "Dev Malhotra",    class: "Class 10-B", rollNo: "10B-03" },
+  { id: 9,  name: "Meera Reddy",     class: "Class 9-A",  rollNo: "9A-01"  },
+  { id: 10, name: "Vivek Iyer",      class: "Class 9-A",  rollNo: "9A-02"  },
+  { id: 11, name: "Ananya Bose",     class: "Class 9-A",  rollNo: "9A-03"  },
+  { id: 12, name: "Karan Joshi",     class: "Class 9-B",  rollNo: "9B-01"  },
+  { id: 13, name: "Divya Rao",       class: "Class 9-B",  rollNo: "9B-02"  },
 ];
 
-const DEPARTMENTS = [
-  { value: "all",        label: "All Departments" },
-  { value: "science",    label: "Science"          },
-  { value: "commerce",   label: "Commerce"         },
-  { value: "humanities", label: "Humanities"       },
+const assignments = [
+  {
+    id: 1, title: "Quadratic Equations Practice", subject: "Mathematics",
+    teacherId: 1, class: "Class 10-A", dueDate: "2026-05-28",
+    totalMarks: 50, status: "active",
+    submissions: [
+      { studentId: 1, submittedAt: "2026-05-25", marksObtained: 45, onTime: true },
+      { studentId: 2, submittedAt: "2026-05-27", marksObtained: 38, onTime: true },
+      { studentId: 3, submittedAt: "2026-05-29", marksObtained: 42, onTime: false },
+      { studentId: 4, submittedAt: "2026-05-26", marksObtained: 30, onTime: true },
+    ],
+  },
+  {
+    id: 2, title: "Newton's Laws Essay", subject: "Physics",
+    teacherId: 2, class: "Class 10-A", dueDate: "2026-05-26",
+    totalMarks: 25, status: "active",
+    submissions: [
+      { studentId: 1, submittedAt: "2026-05-24", marksObtained: 22, onTime: true },
+      { studentId: 2, submittedAt: "2026-05-25", marksObtained: 18, onTime: true },
+      { studentId: 3, submittedAt: "2026-05-26", marksObtained: 20, onTime: true },
+      { studentId: 4, submittedAt: "2026-05-26", marksObtained: 15, onTime: true },
+      { studentId: 5, submittedAt: "2026-05-26", marksObtained: 23, onTime: true },
+    ],
+  },
+  {
+    id: 3, title: "Algebra Word Problems", subject: "Mathematics",
+    teacherId: 1, class: "Class 9-A", dueDate: "2026-06-02",
+    totalMarks: 30, status: "upcoming",
+    submissions: [
+      { studentId: 9,  submittedAt: "2026-05-29", marksObtained: 28, onTime: true },
+      { studentId: 11, submittedAt: "2026-05-30", marksObtained: 25, onTime: true },
+    ],
+  },
+  {
+    id: 4, title: "Organic Chemistry Lab Report", subject: "Chemistry",
+    teacherId: 3, class: "Class 10-B", dueDate: "2026-05-30",
+    totalMarks: 40, status: "active",
+    submissions: [
+      { studentId: 6, submittedAt: "2026-05-28", marksObtained: 35, onTime: true },
+      { studentId: 7, submittedAt: "2026-05-30", marksObtained: 32, onTime: true },
+    ],
+  },
+  {
+    id: 5, title: "English Comprehension Test", subject: "English",
+    teacherId: 4, class: "Class 9-B", dueDate: "2026-05-22",
+    totalMarks: 20, status: "closed",
+    submissions: [
+      { studentId: 12, submittedAt: "2026-05-21", marksObtained: 17, onTime: true },
+      { studentId: 13, submittedAt: "2026-05-22", marksObtained: 14, onTime: true },
+    ],
+  },
+  {
+    id: 6, title: "Motion & Forces Project", subject: "Physics",
+    teacherId: 2, class: "Class 10-B", dueDate: "2026-06-05",
+    totalMarks: 60, status: "upcoming",
+    submissions: [
+      { studentId: 6, submittedAt: "2026-06-01", marksObtained: 55, onTime: true },
+    ],
+  },
 ];
 
-const ALL_CLASSES: ClassRecord[] = [
-  { grade: 9,  name: "9-A",  teacher: "Mrs. Sharma",   students: 42, present: 39, absent: 2, leave: 1 },
-  { grade: 9,  name: "9-B",  teacher: "Mr. Patel",     students: 40, present: 36, absent: 3, leave: 1 },
-  { grade: 10, name: "10-A", teacher: "Mrs. Gupta",    students: 44, present: 42, absent: 1, leave: 1 },
-  { grade: 10, name: "10-B", teacher: "Mr. Roy",       students: 43, present: 38, absent: 4, leave: 1 },
-  { grade: 11, name: "11-A", teacher: "Mr. Banerjee",  students: 41, present: 37, absent: 3, leave: 1 },
-  { grade: 11, name: "11-B", teacher: "Ms. Singh",     students: 38, present: 32, absent: 4, leave: 2 },
-  { grade: 12, name: "12-A", teacher: "Mrs. Das",      students: 40, present: 38, absent: 2, leave: 0 },
-  { grade: 12, name: "12-B", teacher: "Mr. Kapoor",    students: 44, present: 40, absent: 3, leave: 1 },
-];
+// ─── HELPERS ───────────────────────────────────────────────────────────────
 
-const LOW_ATTENDANCE_ALERTS: LowAttendanceAlert[] = [
-  { name: "Aryan Mehta",  initials: "AM", cls: "10-B", pct: 68 },
-  { name: "Priya Joshi",  initials: "PJ", cls: "11-B", pct: 71 },
-  { name: "Rohan Das",    initials: "RD", cls: "9-B",  pct: 73 },
-  { name: "Sneha Verma",  initials: "SV", cls: "12-A", pct: 74 },
-];
-
-const SUBJECT_STATS: SubjectStat[] = [
-  { subject: "Mathematics",      pct: 92.1 },
-  { subject: "Physics",          pct: 89.4 },
-  { subject: "Chemistry",        pct: 90.8 },
-  { subject: "English",          pct: 94.3 },
-  { subject: "Computer Science", pct: 93.7 },
-  { subject: "Biology",          pct: 88.5 },
-  { subject: "History",          pct: 91.2 },
-];
-
-const TREND_DATA   = [82, 85, 88, 87, 90, 91, 89, 92];
-const TREND_LABELS = ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8"];
-
-const OVERALL = {
-  totalStudents: 1248,
-  presentToday:  1139,
-  absentToday:   72,
-  onLeave:       37,
-  schoolAvg:     91.4,
+const classColors: Record<string, string> = {
+  "Class 10-A": "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300",
+  "Class 10-B": "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+  "Class 9-A":  "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
+  "Class 9-B":  "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300",
 };
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
+const subjectColors: Record<string, string> = {
+  "Mathematics": "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/20 dark:text-indigo-300",
+  "Physics":     "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-900/20 dark:text-sky-300",
+  "Chemistry":   "bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-900/20 dark:text-pink-300",
+  "English":     "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300",
+};
 
-function getAttendancePct(c: ClassRecord) {
-  return ((c.present + c.leave) / c.students) * 100;
+const statusStyles: Record<string, string> = {
+  active:   "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+  upcoming: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  closed:   "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+};
+
+function getStudentClassmates(classLabel: string) {
+  return students.filter(s => s.class === classLabel);
 }
 
-function pctBadge(pct: number) {
-  if (pct >= 90) return <Badge className="bg-green-600 text-white">{pct.toFixed(1)}%</Badge>;
-  if (pct >= 75) return <Badge className="bg-amber-500 text-white">{pct.toFixed(1)}%</Badge>;
-  return <Badge className="bg-red-600 text-white">{pct.toFixed(1)}%</Badge>;
-}
-
-function pctColor(pct: number) {
-  if (pct >= 90) return "text-green-600";
-  if (pct >= 75) return "text-amber-500";
-  return "text-red-600";
-}
-
-function progressColor(pct: number) {
-  if (pct >= 90) return "bg-green-500";
-  if (pct >= 75) return "bg-amber-500";
-  return "bg-red-500";
-}
-
-// ── Sub-components ─────────────────────────────────────────────────────────────
-
-function TrendChart() {
-  const max = Math.max(...TREND_DATA);
-  return (
-    <div>
-      <p className="text-xs text-muted-foreground mb-3">Weekly avg attendance — last 8 weeks</p>
-      <div className="flex items-end gap-1.5 h-20">
-        {TREND_DATA.map((v, i) => (
-          <div
-            key={i}
-            className={`flex-1 rounded-t-md transition-all ${
-              i === TREND_DATA.length - 1 ? "bg-blue-600" : "bg-blue-100 dark:bg-blue-900/40"
-            }`}
-            style={{ height: `${Math.round((v / max) * 100)}%` }}
-            title={`Week ${i + 1}: ${v}%`}
-          />
-        ))}
-      </div>
-      <div className="flex gap-1.5 mt-1">
-        {TREND_LABELS.map((l) => (
-          <span key={l} className="flex-1 text-center text-[10px] text-muted-foreground">{l}</span>
-        ))}
-      </div>
-    </div>
+function getStudentRegularityScore(studentId: number) {
+  const relevant = assignments.filter(a =>
+    getStudentClassmates(a.class).some(s => s.id === studentId)
   );
+  if (!relevant.length) return 0;
+  const submitted = relevant.filter(a => a.submissions.some(s => s.studentId === studentId)).length;
+  return Math.round((submitted / relevant.length) * 100);
 }
 
-// ── Main component ─────────────────────────────────────────────────────────────
+function getRegularityLabel(score: number) {
+  if (score >= 85) return { label: "Excellent", color: "text-emerald-600 dark:text-emerald-400" };
+  if (score >= 65) return { label: "Good",      color: "text-blue-600 dark:text-blue-400" };
+  if (score >= 40) return { label: "Average",   color: "text-amber-600 dark:text-amber-400" };
+  return           { label: "At Risk",           color: "text-red-600 dark:text-red-400" };
+}
+
+// ─── MAIN COMPONENT ────────────────────────────────────────────────────────
 
 export function PrincipalAssignments() {
-  const [selectedMonth,  setSelectedMonth]  = useState("may-2026");
-  const [selectedGrade,  setSelectedGrade]  = useState("all");
-  const [selectedDept,   setSelectedDept]   = useState("all");
-  const [activeTab,      setActiveTab]      = useState<"overview" | "today" | "trend">("overview");
 
-  const filteredClasses =
-    selectedGrade === "all"
-      ? ALL_CLASSES
-      : ALL_CLASSES.filter((c) => c.grade === Number(selectedGrade));
+  const [searchQuery, setSearchQuery]       = useState("");
+  const [filterClass, setFilterClass]       = useState("all");
+  const [filterSubject, setFilterSubject]   = useState("all");
+  const [filterStatus, setFilterStatus]     = useState("all");
+  const [activeTab, setActiveTab]           = useState<"assignments" | "students">("assignments");
+  const [expandedId, setExpandedId]         = useState<number | null>(null);
+  const [selectedAssignment, setSelectedAssignment] = useState<typeof assignments[0] | null>(null);
+  const [dialogOpen, setDialogOpen]         = useState(false);
+  const [studentSearch, setStudentSearch]   = useState("");
+  const [studentClassFilter, setStudentClassFilter] = useState("all");
 
-  const tabs: { id: "overview" | "today" | "trend"; label: string }[] = [
-    { id: "overview", label: "Overview" },
-    { id: "today",    label: "Today"    },
-    { id: "trend",    label: "Trend"    },
-  ];
+  // ── filtered assignments ──
+  const filteredAssignments = useMemo(() => assignments.filter(a => {
+    const q = searchQuery.toLowerCase();
+    const matchSearch  = a.title.toLowerCase().includes(q) ||
+                         a.subject.toLowerCase().includes(q) ||
+                         teachers.find(t => t.id === a.teacherId)?.name.toLowerCase().includes(q);
+    const matchClass   = filterClass   === "all" || a.class   === filterClass;
+    const matchSubject = filterSubject === "all" || a.subject === filterSubject;
+    const matchStatus  = filterStatus  === "all" || a.status  === filterStatus;
+    return matchSearch && matchClass && matchSubject && matchStatus;
+  }), [searchQuery, filterClass, filterSubject, filterStatus]);
+
+  // ── student regularity list ──
+  const studentRows = useMemo(() => {
+    return students
+      .filter(s => {
+        const q = studentSearch.toLowerCase();
+        const classMatch = studentClassFilter === "all" || s.class === studentClassFilter;
+        return classMatch && (s.name.toLowerCase().includes(q) || s.rollNo.toLowerCase().includes(q));
+      })
+      .map(s => {
+        const score = getStudentRegularityScore(s.id);
+        const { label, color } = getRegularityLabel(score);
+        const relevant = assignments.filter(a => getStudentClassmates(a.class).some(st => st.id === s.id));
+        const submitted = relevant.filter(a => a.submissions.some(sub => sub.studentId === s.id));
+        const onTime    = submitted.filter(a => a.submissions.find(sub => sub.studentId === s.id)?.onTime);
+        return { ...s, score, label, color, total: relevant.length, submitted: submitted.length, onTime: onTime.length };
+      })
+      .sort((a, b) => b.score - a.score);
+  }, [studentSearch, studentClassFilter]);
+
+  // ── summary stats ──
+  const totalSubmissions = assignments.reduce((acc, a) => acc + a.submissions.length, 0);
+  const avgRate = Math.round(
+    assignments.reduce((acc, a) => {
+      const classSize = getStudentClassmates(a.class).length;
+      return acc + (classSize > 0 ? a.submissions.length / classSize : 0);
+    }, 0) / assignments.length * 100
+  );
+  const atRiskCount = students.filter(s => getStudentRegularityScore(s.id) < 40).length;
+
+  const uniqueClasses   = [...new Set(assignments.map(a => a.class))];
+  const uniqueSubjects  = [...new Set(assignments.map(a => a.subject))];
 
   return (
-    <div className="space-y-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50 dark:bg-gray-950 font-sans">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
-      {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
-            Attendance Overview
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            School-wide attendance across all classes &amp; departments
-          </p>
-        </div>
-        <div className="flex items-center gap-2 bg-green-100 dark:bg-green-900 px-4 py-2 rounded-full text-sm">
-          <TrendingUp className="h-4 w-4 text-green-600" />
-          <span className="font-semibold text-green-600">{OVERALL.schoolAvg}% School Average</span>
-        </div>
-      </div>
-
-      {/* ── Overall Stats ── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="hover:shadow-lg transition-all">
-          <CardContent className="p-6">
-            <div className="flex justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Students</p>
-                <p className="text-4xl font-bold mt-3">{OVERALL.totalStudents.toLocaleString()}</p>
-              </div>
-              <div className="bg-blue-100 p-4 rounded-2xl">
-                <Users className="h-9 w-9 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-lg transition-all">
-          <CardContent className="p-6">
-            <div className="flex justify-between">
-              <div>
-                <p className="text-sm text-green-600">Present Today</p>
-                <p className="text-4xl font-bold mt-3 text-green-600">{OVERALL.presentToday.toLocaleString()}</p>
-              </div>
-              <div className="bg-green-100 p-4 rounded-2xl">
-                <CheckCircle className="h-9 w-9 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-lg transition-all">
-          <CardContent className="p-6">
-            <div className="flex justify-between">
-              <div>
-                <p className="text-sm text-red-600">Absent Today</p>
-                <p className="text-4xl font-bold mt-3 text-red-600">{OVERALL.absentToday}</p>
-              </div>
-              <div className="bg-red-100 p-4 rounded-2xl">
-                <XCircle className="h-9 w-9 text-red-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-lg transition-all">
-          <CardContent className="p-6">
-            <div className="flex justify-between">
-              <div>
-                <p className="text-sm text-emerald-600">School Avg</p>
-                <p className="text-4xl font-bold mt-3 text-emerald-600">{OVERALL.schoolAvg}%</p>
-              </div>
-              <div className="bg-emerald-100 p-4 rounded-2xl">
-                <TrendingUp className="h-9 w-9 text-emerald-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* ── Filters ── */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Month &amp; Year</label>
-              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {MONTHS.map((m) => (
-                    <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Grade</label>
-              <Select value={selectedGrade} onValueChange={setSelectedGrade}>
-                <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {GRADES.map((g) => (
-                    <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Department</label>
-              <Select value={selectedDept} onValueChange={setSelectedDept}>
-                <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {DEPARTMENTS.map((d) => (
-                    <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+        {/* ── Header ── */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold tracking-widest text-indigo-500 uppercase mb-1">Principal Dashboard</p>
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white tracking-tight">
+              Assignment Overview
+            </h1>
+            <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">
+              Monitor all teachers' assignments and student submission regularity
+            </p>
           </div>
-        </CardContent>
-      </Card>
+          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-2.5 shadow-sm">
+            <Clock className="h-4 w-4 text-indigo-400" />
+            Last updated: {format(new Date(), "dd MMM yyyy, hh:mm a")}
+          </div>
+        </div>
 
-      {/* ── Class table + Right panel ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-
-        {/* Class-wise table */}
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ClipboardCheck className="h-5 w-5" />
-              Class-wise Attendance
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">Click a row to drill down</p>
-          </CardHeader>
-          <CardContent>
-            {/* Tab bar */}
-            <div className="flex gap-1 p-1 bg-muted rounded-lg mb-6">
-              {tabs.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setActiveTab(t.id)}
-                  className={`flex-1 py-1.5 rounded-md text-sm font-semibold transition-all ${
-                    activeTab === t.id
-                      ? "bg-background shadow text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Overview tab */}
-            {activeTab === "overview" && (
-              <div className="space-y-1">
-                <div className="grid grid-cols-5 pb-2 border-b text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  <span className="col-span-2">Class</span>
-                  <span className="text-center">Students</span>
-                  <span className="text-center">Absent</span>
-                  <span className="text-center">Rate</span>
+        {/* ── Stats Grid ── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { label: "Total Assignments", value: assignments.length, icon: BookOpen, color: "text-indigo-600", bg: "bg-indigo-50 dark:bg-indigo-900/20" },
+            { label: "Total Submissions", value: totalSubmissions,   icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-900/20" },
+            { label: "Avg Submission Rate", value: `${avgRate}%`,    icon: TrendingUp, color: "text-sky-600",  bg: "bg-sky-50 dark:bg-sky-900/20" },
+            { label: "At-Risk Students",   value: atRiskCount,       icon: AlertTriangle, color: "text-rose-600", bg: "bg-rose-50 dark:bg-rose-900/20" },
+          ].map(stat => (
+            <Card key={stat.label} className="border-0 shadow-sm hover:shadow-md transition-shadow dark:bg-gray-900">
+              <CardContent className="p-5">
+                <div className={`inline-flex p-2.5 rounded-xl ${stat.bg} mb-3`}>
+                  <stat.icon className={`h-5 w-5 ${stat.color}`} />
                 </div>
-                {filteredClasses.map((c) => {
-                  const pct = getAttendancePct(c);
-                  return (
-                    <div
-                      key={c.name}
-                      className="grid grid-cols-5 items-center py-3 border-b last:border-0 hover:bg-muted/50 rounded-lg px-1 cursor-pointer transition-colors"
-                    >
-                      <div className="col-span-2">
-                        <p className="font-semibold text-sm">{c.name}</p>
-                        <p className="text-xs text-muted-foreground">{c.teacher}</p>
-                      </div>
-                      <p className="text-center text-sm">{c.students}</p>
-                      <p className="text-center text-sm font-semibold text-red-600">{c.absent}</p>
-                      <div className="flex flex-col items-center gap-1">
-                        {pctBadge(pct)}
-                        <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full ${progressColor(pct)}`}
-                            style={{ width: `${pct}%` }}
-                          />
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{stat.label}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* ── Tabs ── */}
+        <div className="flex gap-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-1 w-fit shadow-sm">
+          {(["assignments", "students"] as const).map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-5 py-2 rounded-lg text-sm font-semibold capitalize transition-all ${
+                activeTab === tab
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              }`}
+            >
+              {tab === "assignments" ? (
+                <span className="flex items-center gap-2"><BookOpen className="h-4 w-4" />Assignments</span>
+              ) : (
+                <span className="flex items-center gap-2"><Users className="h-4 w-4" />Student Regularity</span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* ══════════════════════════════════════
+            TAB 1 — ASSIGNMENTS
+        ══════════════════════════════════════ */}
+        {activeTab === "assignments" && (
+          <div className="space-y-5">
+            {/* Filters */}
+            <Card className="border-0 shadow-sm dark:bg-gray-900">
+              <CardContent className="p-4 sm:p-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Search assignment / teacher..."
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      className="pl-9 h-10 text-sm"
+                    />
+                  </div>
+                  <Select value={filterClass} onValueChange={setFilterClass}>
+                    <SelectTrigger className="h-10 text-sm">
+                      <SelectValue placeholder="All Classes" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background text-foreground border-border">
+                      <SelectItem value="all">All Classes</SelectItem>
+                      {uniqueClasses.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Select value={filterSubject} onValueChange={setFilterSubject}>
+                    <SelectTrigger className="h-10 text-sm">
+                      <SelectValue placeholder="All Subjects" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background text-foreground border-border">
+                      <SelectItem value="all">All Subjects</SelectItem>
+                      {uniqueSubjects.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Select value={filterStatus} onValueChange={setFilterStatus}>
+                    <SelectTrigger className="h-10 text-sm">
+                      <SelectValue placeholder="All Status" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background text-foreground border-border">
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="upcoming">Upcoming</SelectItem>
+                      <SelectItem value="closed">Closed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {(filterClass !== "all" || filterSubject !== "all" || filterStatus !== "all" || searchQuery) && (
+                  <Button variant="ghost" size="sm" className="mt-3 h-8 text-xs text-indigo-600"
+                    onClick={() => { setFilterClass("all"); setFilterSubject("all"); setFilterStatus("all"); setSearchQuery(""); }}>
+                    <Filter className="h-3.5 w-3.5 mr-1" /> Clear all filters
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Assignment Cards */}
+            <div className="space-y-3">
+              {filteredAssignments.length === 0 && (
+                <Card className="border-0 shadow-sm dark:bg-gray-900">
+                  <CardContent className="p-12 text-center text-gray-400">No assignments match your filters.</CardContent>
+                </Card>
+              )}
+              {filteredAssignments.map(assignment => {
+                const teacher    = teachers.find(t => t.id === assignment.teacherId);
+                const classmates = getStudentClassmates(assignment.class);
+                const subRate    = classmates.length > 0
+                  ? Math.round((assignment.submissions.length / classmates.length) * 100) : 0;
+                const onTimeCount = assignment.submissions.filter(s => s.onTime).length;
+                const isExpanded  = expandedId === assignment.id;
+
+                return (
+                  <Card key={assignment.id} className="border-0 shadow-sm dark:bg-gray-900 overflow-hidden">
+                    <CardContent className="p-0">
+                      {/* Main Row */}
+                      <div className="p-5 sm:p-6">
+                        <div className="flex flex-col sm:flex-row gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${subjectColors[assignment.subject]}`}>
+                                {assignment.subject}
+                              </span>
+                              <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${classColors[assignment.class]}`}>
+                                {assignment.class}
+                              </span>
+                              <span className={`text-xs font-medium px-2.5 py-1 rounded-full capitalize ${statusStyles[assignment.status]}`}>
+                                {assignment.status}
+                              </span>
+                            </div>
+
+                            <h3 className="font-semibold text-gray-900 dark:text-white text-base sm:text-lg truncate">
+                              {assignment.title}
+                            </h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                              👤 {teacher?.name} &nbsp;·&nbsp; Due: {format(new Date(assignment.dueDate), "dd MMM yyyy")}
+                              &nbsp;·&nbsp; {assignment.totalMarks} marks
+                            </p>
+
+                            {/* Submission progress */}
+                            <div className="mt-4 space-y-1.5">
+                              <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                                <span>Submission Rate</span>
+                                <span className="font-semibold text-gray-700 dark:text-gray-200">
+                                  {assignment.submissions.length}/{classmates.length} ({subRate}%)
+                                </span>
+                              </div>
+                              <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all ${subRate >= 75 ? "bg-emerald-500" : subRate >= 50 ? "bg-amber-400" : "bg-rose-500"}`}
+                                  style={{ width: `${subRate}%` }}
+                                />
+                              </div>
+                              <div className="flex gap-4 text-xs text-gray-500 dark:text-gray-400">
+                                <span className="flex items-center gap-1">
+                                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                                  {onTimeCount} on time
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <XCircle className="h-3.5 w-3.5 text-rose-400" />
+                                  {assignment.submissions.length - onTimeCount} late
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Clock className="h-3.5 w-3.5 text-gray-400" />
+                                  {classmates.length - assignment.submissions.length} pending
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex sm:flex-col gap-2 sm:items-end sm:justify-between">
+                            <Button size="sm" variant="outline"
+                              className="text-indigo-600 border-indigo-200 hover:bg-indigo-50 dark:text-indigo-400 dark:border-indigo-800 dark:hover:bg-indigo-900/20"
+                              onClick={() => { setSelectedAssignment(assignment); setDialogOpen(true); }}>
+                              <Eye className="h-4 w-4 mr-1" /> Details
+                            </Button>
+                            <Button size="sm" variant="ghost"
+                              className="text-gray-500"
+                              onClick={() => setExpandedId(isExpanded ? null : assignment.id)}>
+                              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                              <span className="ml-1 text-xs">{isExpanded ? "Hide" : "Submissions"}</span>
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
 
-            {/* Today tab */}
-            {activeTab === "today" && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {filteredClasses.map((c) => {
-                  const pct = (c.present / c.students) * 100;
-                  return (
-                    <div key={c.name} className="p-3 rounded-xl border bg-muted/30">
-                      <p className="font-bold text-sm">{c.name}</p>
-                      <p className={`text-2xl font-extrabold mt-1 ${pctColor(pct)}`}>
-                        {pct.toFixed(0)}%
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {c.present}/{c.students} present
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                      {/* Expanded Submissions */}
+                      {isExpanded && (
+                        <div className="border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-950/50 px-5 sm:px-6 py-4">
+                          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">
+                            Submitted Students ({assignment.submissions.length})
+                          </p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                            {assignment.submissions.map(sub => {
+                              const student = students.find(s => s.id === sub.studentId);
+                              if (!student) return null;
+                              return (
+                                <div key={sub.studentId}
+                                  className="flex items-center justify-between bg-white dark:bg-gray-900 rounded-lg px-3 py-2.5 shadow-sm border border-gray-100 dark:border-gray-800">
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{student.name}</p>
+                                    <p className="text-xs text-gray-400">{format(new Date(sub.submittedAt), "dd MMM")}</p>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                                      {sub.marksObtained}/{assignment.totalMarks}
+                                    </p>
+                                    <span className={`text-xs font-medium ${sub.onTime ? "text-emerald-600" : "text-amber-500"}`}>
+                                      {sub.onTime ? "On time" : "Late"}
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                            {/* Not submitted */}
+                            {classmates
+                              .filter(s => !assignment.submissions.some(sub => sub.studentId === s.id))
+                              .map(s => (
+                                <div key={s.id}
+                                  className="flex items-center justify-between bg-rose-50/50 dark:bg-rose-900/10 rounded-lg px-3 py-2.5 border border-rose-100 dark:border-rose-900/30">
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{s.name}</p>
+                                    <p className="text-xs text-gray-400">{s.rollNo}</p>
+                                  </div>
+                                  <span className="text-xs font-medium text-rose-500 bg-rose-100 dark:bg-rose-900/30 px-2 py-0.5 rounded-full">
+                                    Not submitted
+                                  </span>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
-            {/* Trend tab */}
-            {activeTab === "trend" && <TrendChart />}
-          </CardContent>
-        </Card>
-
-        {/* Right panel */}
-        <div className="lg:col-span-2 flex flex-col gap-6">
-
-          {/* Today's snapshot */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart2 className="h-5 w-5" />
-                Today — 29 May 2026
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">Live snapshot as of 3:00 PM</p>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-4 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
-                  <p className="text-xs text-green-600 font-medium">Present</p>
-                  <p className="text-3xl font-bold text-green-600 mt-1">{OVERALL.presentToday.toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground mt-1">91.3% of roll</p>
-                </div>
-                <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800">
-                  <p className="text-xs text-red-600 font-medium">Absent</p>
-                  <p className="text-3xl font-bold text-red-600 mt-1">{OVERALL.absentToday}</p>
-                  <p className="text-xs text-muted-foreground mt-1">5.8% of roll</p>
-                </div>
-                <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                  <p className="text-xs text-amber-600 font-medium">On Leave</p>
-                  <p className="text-3xl font-bold text-amber-600 mt-1">{OVERALL.onLeave}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Approved</p>
-                </div>
-                <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
-                  <p className="text-xs text-blue-600 font-medium">Classes</p>
-                  <p className="text-3xl font-bold text-blue-600 mt-1">28</p>
-                  <p className="text-xs text-muted-foreground mt-1">All sections</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Low attendance alerts */}
-          <Card className="flex-1">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-red-500" />
-                Low Attendance Alerts
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">Students below 75% this month</p>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {LOW_ATTENDANCE_ALERTS.map((a) => (
-                <div
-                  key={a.name}
-                  className="flex items-center gap-3 p-3 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800"
-                >
-                  <div className="w-9 h-9 rounded-full bg-red-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
-                    {a.initials}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm truncate">{a.name}</p>
-                    <p className="text-xs text-muted-foreground">Class {a.cls}</p>
-                  </div>
-                  <span className="text-sm font-bold text-red-600 flex-shrink-0">{a.pct}%</span>
-                </div>
+        {/* ══════════════════════════════════════
+            TAB 2 — STUDENT REGULARITY
+        ══════════════════════════════════════ */}
+        {activeTab === "students" && (
+          <div className="space-y-5">
+            {/* Legend */}
+            <div className="flex flex-wrap gap-3">
+              {[
+                { label: "Excellent (≥85%)", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
+                { label: "Good (65–84%)",    color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
+                { label: "Average (40–64%)", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" },
+                { label: "At Risk (<40%)",   color: "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400" },
+              ].map(l => (
+                <span key={l.label} className={`text-xs font-semibold px-3 py-1 rounded-full ${l.color}`}>{l.label}</span>
               ))}
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+
+            {/* Filters */}
+            <Card className="border-0 shadow-sm dark:bg-gray-900">
+              <CardContent className="p-4 sm:p-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Search student name or roll no..."
+                      value={studentSearch}
+                      onChange={e => setStudentSearch(e.target.value)}
+                      className="pl-9 h-10 text-sm"
+                    />
+                  </div>
+                  <Select value={studentClassFilter} onValueChange={setStudentClassFilter}>
+                    <SelectTrigger className="h-10 text-sm">
+                      <SelectValue placeholder="All Classes" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background text-foreground border-border">
+                      <SelectItem value="all">All Classes</SelectItem>
+                      {[...new Set(students.map(s => s.class))].map(c => (
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Student Table — Desktop */}
+            <Card className="border-0 shadow-sm dark:bg-gray-900 hidden sm:block">
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-100 dark:border-gray-800">
+                        <th className="text-left px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-400">#</th>
+                        <th className="text-left px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Student</th>
+                        <th className="text-left px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Class</th>
+                        <th className="text-left px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Submitted</th>
+                        <th className="text-left px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-400">On Time</th>
+                        <th className="text-left px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-400 min-w-[180px]">Regularity</th>
+                        <th className="text-left px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {studentRows.map((s, i) => (
+                        <tr key={s.id}
+                          className="border-b border-gray-50 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
+                          <td className="px-6 py-4 text-gray-400 font-medium">
+                            {i < 3
+                              ? <Award className={`h-5 w-5 ${i === 0 ? "text-yellow-400" : i === 1 ? "text-slate-400" : "text-amber-600"}`} />
+                              : <span>{i + 1}</span>}
+                          </td>
+                          <td className="px-6 py-4">
+                            <p className="font-semibold text-gray-900 dark:text-white">{s.name}</p>
+                            <p className="text-xs text-gray-400">{s.rollNo}</p>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${classColors[s.class]}`}>
+                              {s.class}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-gray-700 dark:text-gray-300 font-medium">
+                            {s.submitted}/{s.total}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{s.onTime}</span>
+                            <span className="text-gray-400"> / {s.submitted}</span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="flex-1 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full ${s.score >= 85 ? "bg-emerald-500" : s.score >= 65 ? "bg-blue-500" : s.score >= 40 ? "bg-amber-400" : "bg-rose-500"}`}
+                                  style={{ width: `${s.score}%` }}
+                                />
+                              </div>
+                              <span className="text-xs font-bold text-gray-700 dark:text-gray-200 w-10 text-right">{s.score}%</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`text-xs font-semibold ${s.color}`}>{s.label}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {studentRows.length === 0 && (
+                    <p className="text-center py-10 text-gray-400 text-sm">No students found.</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Student Cards — Mobile */}
+            <div className="sm:hidden space-y-3">
+              {studentRows.map((s, i) => (
+                <Card key={s.id} className="border-0 shadow-sm dark:bg-gray-900">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          {i < 3 && (
+                            <Award className={`h-4 w-4 ${i === 0 ? "text-yellow-400" : i === 1 ? "text-slate-400" : "text-amber-600"}`} />
+                          )}
+                          <p className="font-semibold text-gray-900 dark:text-white">{s.name}</p>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-0.5">{s.rollNo}</p>
+                      </div>
+                      <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${classColors[s.class]}`}>{s.class}</span>
+                    </div>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="flex-1 h-2.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${s.score >= 85 ? "bg-emerald-500" : s.score >= 65 ? "bg-blue-500" : s.score >= 40 ? "bg-amber-400" : "bg-rose-500"}`}
+                          style={{ width: `${s.score}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-bold text-gray-700 dark:text-gray-200">{s.score}%</span>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                      <span>Submitted: <b className="text-gray-800 dark:text-gray-200">{s.submitted}/{s.total}</b></span>
+                      <span>On time: <b className="text-emerald-600 dark:text-emerald-400">{s.onTime}</b></span>
+                      <span className={`font-semibold ${s.color}`}>{s.label}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              {studentRows.length === 0 && (
+                <Card className="border-0"><CardContent className="p-10 text-center text-gray-400 text-sm">No students found.</CardContent></Card>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* ── Subject-wise school average ── */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5" />
-            Subject-wise School Average
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Aggregated across all classes — May 2026
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {SUBJECT_STATS.map((s) => (
-            <div key={s.subject}>
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="font-semibold text-base">{s.subject}</h3>
-                {pctBadge(s.pct)}
-              </div>
-              <Progress value={s.pct} className="h-3" />
-              <div className="flex justify-between mt-1.5 text-xs text-muted-foreground">
-                <span>{s.pct.toFixed(1)}% average attendance</span>
-                <span className={pctColor(s.pct)}>
-                  {s.pct >= 90 ? "✓ Good" : s.pct >= 75 ? "⚠ Needs attention" : "✗ Critical"}
-                </span>
-              </div>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+      {/* ── Assignment Detail Dialog ── */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl">{selectedAssignment?.title}</DialogTitle>
+          </DialogHeader>
+          {selectedAssignment && (() => {
+            const teacher    = teachers.find(t => t.id === selectedAssignment.teacherId);
+            const classmates = getStudentClassmates(selectedAssignment.class);
+            const subRate    = classmates.length > 0
+              ? Math.round((selectedAssignment.submissions.length / classmates.length) * 100) : 0;
+            const avgMarks   = selectedAssignment.submissions.length > 0
+              ? Math.round(selectedAssignment.submissions.reduce((a, s) => a + s.marksObtained, 0) / selectedAssignment.submissions.length)
+              : 0;
 
+            return (
+              <div className="space-y-6 pt-2">
+                {/* Badges */}
+                <div className="flex flex-wrap gap-2">
+                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${subjectColors[selectedAssignment.subject]}`}>
+                    {selectedAssignment.subject}
+                  </span>
+                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${classColors[selectedAssignment.class]}`}>
+                    {selectedAssignment.class}
+                  </span>
+                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full capitalize ${statusStyles[selectedAssignment.status]}`}>
+                    {selectedAssignment.status}
+                  </span>
+                </div>
+
+                {/* Meta */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+                  {[
+                    { label: "Teacher",    value: teacher?.name },
+                    { label: "Due Date",   value: format(new Date(selectedAssignment.dueDate), "dd MMM yyyy") },
+                    { label: "Total Marks", value: selectedAssignment.totalMarks },
+                    { label: "Submissions", value: `${selectedAssignment.submissions.length} / ${classmates.length}` },
+                    { label: "Sub. Rate",   value: `${subRate}%` },
+                    { label: "Avg. Marks",  value: avgMarks || "—" },
+                  ].map(item => (
+                    <div key={item.label} className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
+                      <p className="text-xs text-gray-400 mb-0.5">{item.label}</p>
+                      <p className="font-semibold text-gray-900 dark:text-white">{item.value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Submission progress bar */}
+                <div>
+                  <div className="flex justify-between text-xs text-gray-500 mb-1.5">
+                    <span>Overall Submission Rate</span><span className="font-bold">{subRate}%</span>
+                  </div>
+                  <Progress value={subRate} className="h-3" />
+                </div>
+
+                {/* Per-student breakdown */}
+                <div>
+                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-2">
+                    <BarChart3 className="h-4 w-4" /> Student Submission Breakdown
+                  </p>
+                  <div className="space-y-2">
+                    {classmates.map(s => {
+                      const sub = selectedAssignment.submissions.find(x => x.studentId === s.id);
+                      return (
+                        <div key={s.id}
+                          className={`flex items-center justify-between rounded-xl px-4 py-3 ${
+                            sub ? "bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800"
+                                : "bg-rose-50/60 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-900/30"
+                          }`}>
+                          <div>
+                            <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{s.name}</p>
+                            <p className="text-xs text-gray-400">{s.rollNo}</p>
+                          </div>
+                          {sub ? (
+                            <div className="text-right">
+                              <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                                {sub.marksObtained}/{selectedAssignment.totalMarks}
+                              </p>
+                              <p className={`text-xs font-medium ${sub.onTime ? "text-emerald-600" : "text-amber-500"}`}>
+                                {sub.onTime ? "✓ On time" : "⚠ Late"} · {format(new Date(sub.submittedAt), "dd MMM")}
+                              </p>
+                            </div>
+                          ) : (
+                            <span className="text-xs font-semibold text-rose-500 bg-rose-100 dark:bg-rose-900/30 px-2.5 py-1 rounded-full">
+                              Not submitted
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
