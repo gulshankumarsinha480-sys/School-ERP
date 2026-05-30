@@ -33,6 +33,8 @@ import { PrincipalStudents } from "./pages/principal/PrincipalStudents";
 import { PrincipalTeachers } from "./pages/principal/PrincipalTeachers";
 import { PrincipalAttendance } from "./pages/principal/PrincipalAttendance";
 import { PrincipalMarks } from "./pages/principal/PrincipalMarks";
+import { PrincipalClassSetup } from "./pages/principal/PrincipalClassSetup";
+import { PrincipalSectionSetup } from "./pages/principal/PrincipalSectionSetup"
 import { PrincipalAssignments } from "./pages/principal/PrincipalAssignments";
 import { PrincipalTimetable } from "./pages/principal/PrincipalTimetable";
 import { PrincipalFinance } from "./pages/principal/PrincipalFinance";
@@ -57,7 +59,10 @@ export const router = createBrowserRouter([
       { index: true, Component: PrincipalDashboard },
       { path: "reports", Component: PrincipalReports },
       { path: "students", Component: PrincipalStudents },
+      { path: "marks",  Component: PrincipalMarks},
       { path: "setup/students", Component: PrincipalStudentSetup },
+      { path: "setup/classSetup", Component: PrincipalClassSetup },
+      { path: "setup/sectionSetup", Component: PrincipalSectionSetup},
 
       { path: "teachers", Component: PrincipalTeachers },
       { path: "attendance", Component: PrincipalAttendance },

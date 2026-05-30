@@ -1,8 +1,6 @@
 # TODO
 
-- [ ] Inspect existing Principal attendance page and related attendance pages (teacher/student) for UI patterns.
-- [ ] Design and implement `src/app/pages/principal/PrincipalAttendance.tsx` as a full principal attendance dashboard (overview + history + export).
-- [ ] Reuse existing shadcn/ui components and styling conventions.
-- [ ] Ensure imports compile and page renders under `/principal/attendance` route.
-- [ ] Run a build to verify TypeScript compilation.
+- [ ] Fix Principal module setup -> Class setup navigation/action paths.
+- [ ] Fix Vite import alias resolution error: `@/components/ui/card` not found.
+- [ ] Run build/dev to confirm no remaining module resolution errors.
 

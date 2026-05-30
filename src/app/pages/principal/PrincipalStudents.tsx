@@ -1334,9 +1334,6 @@ export function PrincipalStudents() {
           <h1 className="text-2xl font-semibold text-foreground">Students</h1>
           <p className="text-sm text-foreground/60 mt-1">Manage all students across every class</p>
         </div>
-        <Button className="bg-violet-600 hover:bg-violet-700" onClick={() => setAddOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" /> Add Student
-        </Button>
       </div>
 
       {/* Stats */}
