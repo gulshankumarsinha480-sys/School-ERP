@@ -19,45 +19,53 @@ import {
   ChevronDown,
   ChevronRight,
   School,
+  Settings,
+  UserPlus,
+  UsersRound,
+  Boxes,
+  HeartHandshake,
+  GroupIcon,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback } from "./ui/avatar";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { ThemeSwitcher } from "./Theme/ThemeSwitcher";
+
+// ── Setup menu items ──────────────────────────────────────────────────────────
+const setupMenuItems = [
+  { name: "Student Setup",   href: "/principal/setup/students",   icon: GraduationCap },
+  { name: "Teacher Setup",   href: "/principal/setup/teachers",   icon: UsersRound     },
+  { name: "Inventory Setup", href: "/principal/setup/inventory",  icon: Boxes          },
+  { name: "Parent Setup",    href: "/principal/setup/parents",    icon: HeartHandshake },
+];
 
 // Navigation groups for Principal — grouped by domain for clarity
 const navigationGroups = [
   {
     label: "Overview",
     items: [
-      { name: "Dashboard", href: "/principal", icon: LayoutDashboard },
-      { name: "Reports & Analytics", href: "/principal/reports", icon: BarChart3 },
+      { name: "Dashboard",          href: "/principal",          icon: LayoutDashboard },
+      { name: "Reports & Analytics", href: "/principal/reports", icon: BarChart3       },
     ],
   },
   {
-    label: "People",
+    label: "Student Details",
     items: [
-      { name: "Students", href: "/principal/students", icon: GraduationCap },
-      { name: "Teachers", href: "/principal/teachers", icon: Users },
-    ],
-  },
-  {
-    label: "Academics",
-    items: [
-      { name: "Attendance", href: "/principal/attendance", icon: ClipboardCheck },
-      { name: "Marks", href: "/principal/marks", icon: FileText },
-      { name: "Assignments", href: "/principal/assignments", icon: BookOpen },
-      { name: "Timetable", href: "/principal/timetable", icon: Calendar },
-      { name: "Notes", href: "/principal/notes", icon: Upload },
+      { name: "Manage Students",  href: "/principal/students", icon: GroupIcon},
+      { name: "Attendance",  href: "/principal/attendance",  icon: ClipboardCheck },
+      { name: "Marks",       href: "/principal/marks",       icon: FileText       },
+      { name: "Assignments", href: "/principal/assignments", icon: BookOpen       },
+      { name: "Timetable",   href: "/principal/timetable",   icon: Calendar       },
+      { name: "Notes",       href: "/principal/notes",       icon: Upload         },
     ],
   },
   {
     label: "Administration",
     items: [
-      { name: "Finance", href: "/principal/finance", icon: Wallet },
-      { name: "Inventory", href: "/principal/inventory", icon: Package },
-      { name: "Library", href: "/principal/library", icon: Library },
-      { name: "Communication", href: "/principal/communication", icon: MessageSquare },
+      { name: "Finance",       href: "/principal/finance",        icon: Wallet        },
+      { name: "Inventory",     href: "/principal/inventory",      icon: Package       },
+      { name: "Library",       href: "/principal/library",        icon: Library       },
+      { name: "Communication", href: "/principal/communication",  icon: MessageSquare },
     ],
   },
 ];
@@ -65,10 +73,101 @@ const navigationGroups = [
 // Flattened list used for active-path matching
 const allNavItems = navigationGroups.flatMap((g) => g.items);
 
+// ── Setup Dropdown ─────────────────────────────────────────────────────────────
+function SetupDropdown() {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const location = useLocation();
+
+  // Close on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Close on route change
+  useEffect(() => { setOpen(false); }, [location.pathname]);
+
+  const isSetupActive = setupMenuItems.some((i) => location.pathname === i.href);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((p) => !p)}
+        className={`
+          flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium
+          border transition-colors
+          ${isSetupActive
+            ? "bg-violet-50 border-violet-200 text-violet-700 dark:bg-violet-900/40 dark:border-violet-700 dark:text-violet-200"
+            : "bg-card border-border text-foreground/75 hover:bg-accent hover:text-foreground"
+          }
+        `}
+      >
+        <Settings className={`h-4 w-4 ${isSetupActive ? "text-violet-600 dark:text-violet-300" : ""}`} />
+        <span>Setup</span>
+        <ChevronDown
+          className={`h-3.5 w-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {/* Dropdown Panel */}
+      {open && (
+        <div
+          className="
+            absolute right-0 top-full mt-2 w-52 z-50
+            bg-card border border-border rounded-xl shadow-lg
+            overflow-hidden
+            animate-in fade-in slide-in-from-top-1 duration-150
+          "
+        >
+          {/* Header */}
+          <div className="px-3 py-2 border-b border-border bg-accent/30">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-foreground/40">
+              Setup Options
+            </p>
+          </div>
+
+          {/* Items */}
+          <ul className="p-1.5 space-y-0.5">
+            {setupMenuItems.map((item) => {
+              const active = location.pathname === item.href;
+              return (
+                <li key={item.name}>
+                  <Link
+                    to={item.href}
+                    className={`
+                      flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium
+                      transition-colors
+                      ${active
+                        ? "bg-violet-50 text-violet-700 dark:bg-violet-900/40 dark:text-violet-200"
+                        : "text-foreground/75 hover:bg-accent hover:text-foreground"
+                      }
+                    `}
+                  >
+                    <item.icon
+                      className={`h-4 w-4 shrink-0 ${active ? "text-violet-600 dark:text-violet-300" : "text-foreground/50"}`}
+                    />
+                    {item.name}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Main Layout ────────────────────────────────────────────────────────────────
 export function PrincipalLayout() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  // Track which groups are collapsed (all open by default)
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
 
   const toggleGroup = (label: string) => {
@@ -142,7 +241,6 @@ export function PrincipalLayout() {
               const isCollapsed = collapsedGroups[group.label];
               return (
                 <div key={group.label}>
-                  {/* Group Header — clickable to collapse */}
                   <button
                     onClick={() => toggleGroup(group.label)}
                     className="w-full flex items-center justify-between px-3 py-1.5 mb-0.5 rounded-md
@@ -156,7 +254,6 @@ export function PrincipalLayout() {
                     }
                   </button>
 
-                  {/* Group Items */}
                   {!isCollapsed && (
                     <ul className="space-y-0.5 mb-2">
                       {group.items.map((item) => {
@@ -207,7 +304,7 @@ export function PrincipalLayout() {
       <div className="lg:pl-64">
 
         {/* Top Bar */}
-        <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-6">
+        <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-6 gap-3">
           <Button
             variant="ghost"
             size="sm"
@@ -217,16 +314,22 @@ export function PrincipalLayout() {
             <Menu className="h-5 w-5" />
           </Button>
 
-          {/* Breadcrumb — shows current page name */}
+          {/* Breadcrumb */}
           <div className="hidden lg:flex items-center gap-2 text-sm text-foreground/60">
             <School className="h-4 w-4" />
             <span>/</span>
             <span className="text-foreground font-medium">
-              {allNavItems.find((i) => i.href === location.pathname)?.name ?? "Principal"}
+              {allNavItems.find((i) => i.href === location.pathname)?.name
+                ?? setupMenuItems.find((i) => i.href === location.pathname)?.name
+                ?? "Principal"}
             </span>
           </div>
 
+          {/* Right-side actions */}
           <div className="flex items-center gap-3 ml-auto flex-wrap justify-end">
+            {/* ── Setup Dropdown ── */}
+            <SetupDropdown />
+
             <ThemeSwitcher />
             <p className="text-xs sm:text-sm text-foreground/60">Academic Year: 2025-26</p>
           </div>

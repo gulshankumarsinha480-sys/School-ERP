@@ -39,6 +39,7 @@ import { PrincipalFinance } from "./pages/principal/PrincipalFinance";
 import { PrincipalInventory } from "./pages/principal/PrincipalInventory";
 import { PrincipalLibrary } from "./pages/principal/PrincipalLibrary";
 import { PrincipalCommunication } from "./pages/principal/PrincipalCommunication";
+import { PrincipalStudentSetup } from "./pages/principal/PrincipalStudentSetup";
 
 export const router = createBrowserRouter([
   {
@@ -56,6 +57,8 @@ export const router = createBrowserRouter([
       { index: true, Component: PrincipalDashboard },
       { path: "reports", Component: PrincipalReports },
       { path: "students", Component: PrincipalStudents },
+      { path: "setup/students", Component: PrincipalStudentSetup },
+
       { path: "teachers", Component: PrincipalTeachers },
       { path: "attendance", Component: PrincipalAttendance },
       { path: "marks", Component: PrincipalMarks },
