@@ -25,6 +25,8 @@ import {
   Boxes,
   HeartHandshake,
   GroupIcon,
+  BuildingIcon,
+  Building2,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback } from "./ui/avatar";
@@ -33,6 +35,8 @@ import { ThemeSwitcher } from "./Theme/ThemeSwitcher";
 
 // ── Setup menu items ──────────────────────────────────────────────────────────
 const setupMenuItems = [
+  { name: "Section Setup", href:  "./setup/sectionSetup", icon: Building2},
+  { name: "Class setup",     href: "./setup/classSetup", icon: BuildingIcon},
   { name: "Student Setup",   href: "/principal/setup/students",   icon: GraduationCap },
   { name: "Teacher Setup",   href: "/principal/setup/teachers",   icon: UsersRound     },
   { name: "Inventory Setup", href: "/principal/setup/inventory",  icon: Boxes          },
