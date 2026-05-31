@@ -41,6 +41,7 @@ const setupMenuItems = [
   { name: "Teacher Setup",   href: "/principal/setup/teachers",   icon: UsersRound     },
   { name: "Inventory Setup", href: "/principal/setup/inventory",  icon: Boxes          },
   { name: "Parent Setup",    href: "/principal/setup/parents",    icon: HeartHandshake },
+  { name: "Academic year",  href: "./setup/academicYear",  icon: Calendar},
 ];
 
 // Navigation groups for Principal — grouped by domain for clarity
