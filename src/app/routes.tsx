@@ -43,6 +43,7 @@ import { PrincipalLibrary } from "./pages/principal/PrincipalLibrary";
 import { PrincipalCommunication } from "./pages/principal/PrincipalCommunication";
 import { PrincipalStudentSetup } from "./pages/principal/PrincipalStudentSetup";
 import { PrincipalAcademicYear } from "./pages/principal/PrincipalAcademicYear";
+import { PrincipalTeacherSetup } from "./pages/principal/PrincipalTeacherSetup";
 
 export const router = createBrowserRouter([
   {
@@ -60,11 +61,13 @@ export const router = createBrowserRouter([
       { index: true, Component: PrincipalDashboard },
       { path: "reports", Component: PrincipalReports },
       { path: "students", Component: PrincipalStudents },
-      { path: "marks",  Component: PrincipalMarks},
+      { path: "teachers", Component:  PrincipalTeachers},
+      { path: "marks",  Component: PrincipalMarks },
       { path: "setup/AcademicYear", Component:  PrincipalAcademicYear},
       { path: "setup/students", Component: PrincipalStudentSetup },
       { path: "setup/classSetup", Component: PrincipalClassSetup },
-      { path: "setup/sectionSetup", Component: PrincipalSectionSetup},
+      { path: "setup/sectionSetup", Component: PrincipalSectionSetup },
+      { path: "setup/teachers",  Component: PrincipalTeacherSetup },
 
       { path: "teachers", Component: PrincipalTeachers },
       { path: "attendance", Component: PrincipalAttendance },
