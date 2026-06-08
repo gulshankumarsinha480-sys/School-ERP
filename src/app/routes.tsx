@@ -15,6 +15,8 @@ import { StudentDashboard } from "./pages/student/StudentDashboard";
 import { StudentMarks } from "./pages/student/StudentMarks";
 import { StudentAssignments } from "./pages/student/StudentAssignments";
 import { StudentAttendance } from "./pages/student/StudentAttendance";
+// Top pe import add karo
+import { StudentFeesSuccess } from "./pages/student/StudentFeesSuccess";
 import { StudentFees } from "./pages/student/StudentFees";
 import { StudentTimetable } from "./pages/student/StudentTimetable";
 import { StudentResources } from "./pages/student/StudentResources";
@@ -105,6 +107,7 @@ export const router = createBrowserRouter([
       { path: "assignments", Component: StudentAssignments },
       { path: "attendance", Component: StudentAttendance },
       { path: "fees", Component: StudentFees },
+      { path: "fees/success", Component: StudentFeesSuccess },
       { path: "timetable", Component: StudentTimetable },
       { path: "resources", Component: StudentResources },
       { path: "communication", Component: StudentCommunication },

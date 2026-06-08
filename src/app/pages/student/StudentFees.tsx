@@ -1,4 +1,7 @@
 import { useState } from "react";
+// ✅ Yeh lagao
+import { useNavigate } from "react-router";
+
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
@@ -14,6 +17,7 @@ import {
   Receipt,
   TrendingUp,
   Eye,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -29,8 +33,10 @@ import {
 } from "recharts";
 
 export function StudentFees() {
+  const navigate = useNavigate();
   const [showInvoice, setShowInvoice] = useState(false);
   const [selectedInstallment, setSelectedInstallment] = useState<any>(null);
+  const [payingId, setPayingId] = useState<number | null>(null); // loading state
 
   const feeStructure = {
     academicYear: "2025-26",
@@ -67,12 +73,37 @@ export function StudentFees() {
     return diffDays > 0 ? diffDays * 100 : 0;
   };
 
+  // ✅ UPDATED: Mock payment flow — seedha success page pe jaata hai
   const handlePayNow = (inst: any) => {
     const lateFee = calculateLateFee(inst.dueDate);
+    const totalAmount = inst.amount + lateFee;
+
     if (lateFee > 0) {
       toast.warning(`Late fee of ₹${lateFee} applicable`);
     }
-    toast.success("Opening Secure Payment Gateway...");
+
+    setPayingId(inst.id); // button pe loading spinner dikhao
+    toast.success("Processing payment...");
+
+    // 1.5 second baad mock success
+    setTimeout(() => {
+      setPayingId(null);
+
+      const state = {
+        txnId: "TXN" + Date.now(),
+        orderId: "ORD" + Date.now(),
+        amount: totalAmount,
+        installmentName: inst.name,
+      };
+
+      // Avoid hard crash if this component is rendered outside a Router context.
+      // (useNavigate() requires Router; the app should provide it, but this makes the page robust.)
+      try {
+        navigate("/student/fees/success", { state });
+      } catch {
+        window.location.href = `/student/fees/success`;
+      }
+    }, 1500);
   };
 
   const handleViewInvoice = (inst: any) => {
@@ -80,8 +111,17 @@ export function StudentFees() {
     setShowInvoice(true);
   };
 
+  const canDownloadReceipt = (inst: any) => {
+    return Boolean(inst && inst.status === "paid" && inst.txn);
+  };
+
   const handleDownloadStatement = () => {
     toast.success("Fee Statement Downloaded", { description: "PDF generated successfully" });
+  };
+
+  // ✅ BUG FIX: handleDownloadReceipt function add kiya
+  const handleDownloadReceipt = (txn: string | null) => {
+    toast.success("Receipt Downloaded", { description: `TXN: ${txn}` });
   };
 
   return (
@@ -168,12 +208,14 @@ export function StudentFees() {
         <CardContent className="space-y-5">
           {feeStructure.installments.map((inst) => {
             const lateFee = inst.status === "pending" ? calculateLateFee(inst.dueDate) : 0;
+            const isLoading = payingId === inst.id;
+
             return (
               <div key={inst.id} className="border border-border rounded-2xl p-6 hover:shadow-lg transition-all">
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="text-xl font-semibold">{inst.name}</h3>
-                    <p className="text-3xl font-bold mt-2">₹{inst.amount}</p>
+                    <p className="text-3xl font-bold mt-2">₹{inst.amount.toLocaleString()}</p>
                   </div>
                   {inst.status === "paid" ? (
                     <Badge className="bg-green-600">PAID</Badge>
@@ -203,9 +245,22 @@ export function StudentFees() {
 
                 <div className="flex gap-3 mt-6">
                   {inst.status === "pending" && (
-                    <Button className="flex-1" onClick={() => handlePayNow(inst)}>
-                      <CreditCard className="mr-2 h-5 w-5" />
-                      Pay Now
+                    <Button
+                      className="flex-1"
+                      onClick={() => handlePayNow(inst)}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard className="mr-2 h-5 w-5" />
+                          Pay Now
+                        </>
+                      )}
                     </Button>
                   )}
                   <Button variant="outline" className="flex-1" onClick={() => handleViewInvoice(inst)}>
@@ -229,7 +284,7 @@ export function StudentFees() {
             <div className="space-y-6 py-4">
               <div className="text-center border-b pb-4">
                 <p className="font-mono text-sm">INVOICE</p>
-                <p className="text-2xl font-bold">₹{selectedInstallment.amount}</p>
+                <p className="text-2xl font-bold">₹{selectedInstallment.amount.toLocaleString()}</p>
                 <p className="text-sm text-gray-500">{selectedInstallment.name}</p>
               </div>
 
@@ -242,16 +297,39 @@ export function StudentFees() {
                   <span>Due Date</span>
                   <span>{selectedInstallment.dueDate}</span>
                 </div>
-                {selectedInstallment.paidDate && (
+                {selectedInstallment.paidDate ? (
                   <div className="flex justify-between">
                     <span>Paid Date</span>
                     <span className="text-green-600">{selectedInstallment.paidDate}</span>
                   </div>
+                ) : (
+                  <div className="flex justify-between">
+                    <span>Paid Date</span>
+                    <span className="text-muted-foreground">Not paid yet</span>
+                  </div>
+                )}
+                {selectedInstallment.txn ? (
+                  <div className="flex justify-between">
+                    <span>Transaction ID</span>
+                    <span className="font-mono text-xs">{selectedInstallment.txn}</span>
+                  </div>
+                ) : (
+                  <div className="flex justify-between">
+                    <span>Transaction ID</span>
+                    <span className="text-muted-foreground">—</span>
+                  </div>
                 )}
               </div>
 
-              <Button className="w-full" onClick={() => handleDownloadReceipt(selectedInstallment.txn)}>
-                Download PDF Invoice
+              <Button
+                className="w-full"
+                disabled={!canDownloadReceipt(selectedInstallment)}
+                onClick={() => handleDownloadReceipt(selectedInstallment.txn)}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                {canDownloadReceipt(selectedInstallment)
+                  ? "Download PDF Invoice"
+                  : "Pay to Download PDF Invoice"}
               </Button>
             </div>
           )}
@@ -275,10 +353,3 @@ export function StudentFees() {
     </div>
   );
 }
-
-const calculateLateFee = (dueDate: string) => {
-  const due = new Date(dueDate);
-  const today = new Date("2026-05-27"); // Current date simulation
-  const diffDays = Math.ceil((today.getTime() - due.getTime()) / (1000 * 3600 * 24));
-  return diffDays > 0 ? diffDays * 100 : 0;
-};
