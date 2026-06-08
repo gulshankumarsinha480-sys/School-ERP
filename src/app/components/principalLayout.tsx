@@ -27,6 +27,7 @@ import {
   GroupIcon,
   BuildingIcon,
   Building2,
+  Group,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback } from "./ui/avatar";
@@ -64,6 +65,14 @@ const navigationGroups = [
       { name: "Notes",       href: "/principal/notes",       icon: Upload         },
     ],
   },
+
+  {
+    label:  "Teacher Details",
+    items:  [
+      {name: "Manage Teachers", href: "/principal/teachers", icon: Group},
+    ]
+  },
+
   {
     label: "Administration",
     items: [
